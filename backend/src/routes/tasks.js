@@ -35,7 +35,7 @@ const updateTaskSchema = z.object({
   deadline: z.string().refine(d => !isNaN(Date.parse(d))).optional(),
   notes: z.string().optional(),
   assignedUserId: z.string().optional().nullable(),
-  assignedTeamId: z.string().min(1, 'Assigned Group is required'),
+  assignedTeamId: z.string().optional().nullable(),
 });
 
 // GET /api/tasks/summary
