@@ -1,0 +1,86 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String     @default("USER")
+  canEditBranding Boolean @default(false)
+  teams     Team[]
+  tasks     Task[]
+  comments  Comment[]
+  notifications Notification[]
+  createdAt DateTime @default(now())
+}
+
+model SystemSetting {
+  id         String   @id @default("default")
+  themeColor String   @default("#7c3aed")
+  bgUrl      String?
+  logoUrl    String?
+  updatedAt  DateTime @updatedAt
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  users     User[]
+  tasks     Task[]
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id             String    @id @default(cuid())
+  title          String
+  group          String
+  description    String?
+  priority       String  @default("MEDIUM")
+  devStatus      String @default("NOT_STARTED")
+  testStatus     String @default("NOT_STARTED")
+  deadline       DateTime
+  notes          String?
+  assignedUser   User?     @relation(fields: [assignedUserId], references: [id])
+  assignedUserId String?
+  assignedTeam   Team?     @relation(fields: [assignedTeamId], references: [id])
+  assignedTeamId String?
+  overdueFlag    Boolean   @default(false)
+  overdueTeam    String?   // "Dev", "Testing", or null
+  isClosed       Boolean   @default(false)
+  lastNotifiedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  comments       Comment[]
+  notifications  Notification[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  imageUrl  String?
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  taskId    String?
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}

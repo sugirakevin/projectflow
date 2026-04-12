@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { font-family: 'Inter', system-ui, sans-serif; }
+  body { @apply bg-gray-950 text-gray-100; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply font-medium px-4 py-2 rounded-lg transition-all duration-200 active:scale-95;
+    background-color: var(--brand-color, #7c3aed);
+    color: var(--brand-text-color, #ffffff);
+  }
+  .btn-primary:hover {
+    background-color: var(--brand-dark-color, #6d28d9);
+  }
+  .btn-secondary {
+    @apply bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium px-4 py-2 rounded-lg transition-all duration-200 active:scale-95;
+  }
+  .btn-danger {
+    @apply bg-red-600/20 hover:bg-red-600/40 text-red-400 font-medium px-4 py-2 rounded-lg transition-all duration-200 active:scale-95;
+  }
+  .card {
+    @apply bg-gray-900 border border-gray-800 rounded-xl;
+  }
+  .input {
+    @apply bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-500 rounded-lg px-3 py-2 w-full focus:outline-none focus:border-transparent transition-all;
+    border-width: 1px;
+    border-style: solid;
+  }
+  .input:focus {
+    box-shadow: 0 0 0 2px var(--brand-color, #7c3aed);
+  }
+  .label {
+    @apply block text-sm font-medium text-gray-300 mb-1;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .table-cell {
+    @apply px-4 py-3 text-sm text-gray-300;
+  }
+  .table-header {
+    @apply px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { @apply bg-gray-900; }
+::-webkit-scrollbar-thumb { @apply bg-gray-700 rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-gray-600; }
+
+/* Animated gradient background for auth pages */
+.auth-bg {
+  background: radial-gradient(ellipse at 20% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+              transparent;
+}
+
+/* Table row hover */
+.task-row:hover { @apply bg-white/[0.02]; }
+
+.inline-select {
+  @apply bg-transparent border-none text-sm cursor-pointer focus:outline-none rounded px-1 py-0.5;
+}
+.inline-select:focus {
+  box-shadow: 0 0 0 1px var(--brand-color, #7c3aed);
+}
+
+@layer utilities {
+  .text-brand { color: var(--brand-color, #7c3aed); }
+  .border-brand { border-color: var(--brand-color, #7c3aed); }
+  .bg-brand { background-color: var(--brand-color, #7c3aed); }
+  
+  .bg-brand\/20 { background-color: color-mix(in srgb, var(--brand-color, #7c3aed) 20%, transparent); }
+  .bg-brand\/30 { background-color: color-mix(in srgb, var(--brand-color, #7c3aed) 30%, transparent); }
+  
+  .border-brand\/30 { border-color: color-mix(in srgb, var(--brand-color, #7c3aed) 30%, transparent); }
+  .border-brand\/40 { border-color: color-mix(in srgb, var(--brand-color, #7c3aed) 40%, transparent); }
+  
+  .shadow-brand\/20 {
+    --tw-shadow-color: color-mix(in srgb, var(--brand-color, #7c3aed) 20%, transparent);
+    --tw-shadow: var(--tw-shadow-colored);
+  }
+}

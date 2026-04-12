@@ -1,0 +1,318 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import api from '../api/axios';
+import TaskModal from '../components/TaskModal';
+import { PriorityBadge, DevStatusBadge, TestStatusBadge, OverdueBadge } from '../components/Badge';
+import { format } from 'date-fns';
+import { useAuth } from '../contexts/AuthContext';
+
+const PRIORITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+const DEV_STATUSES = ['NOT_STARTED', 'IN_PROGRESS', 'IN_REVIEW', 'COMPLETED', 'BLOCKED'];
+const TEST_STATUSES = ['NOT_STARTED', 'IN_PROGRESS', 'PASSED', 'FAILED', 'BLOCKED'];
+
+const DEV_LABELS = { NOT_STARTED: 'Not Started', IN_PROGRESS: 'In Progress', IN_REVIEW: 'In Review', COMPLETED: 'Completed', BLOCKED: 'Blocked' };
+const TEST_LABELS = { NOT_STARTED: 'Not Started', IN_PROGRESS: 'In Progress', PASSED: 'Passed', FAILED: 'Failed', BLOCKED: 'Blocked' };
+const PRI_LABELS = { CRITICAL: 'Critical', HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low' };
+
+function InlineSelect({ value, options, labels, onChange, colorClass }) {
+  return (
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className={`inline-select text-xs font-medium rounded px-1.5 py-0.5 border cursor-pointer ${colorClass}`}
+      style={{ background: 'transparent' }}
+    >
+      {options.map(o => (
+        <option key={o} value={o} style={{ background: '#1f2937' }}>{labels[o] || o}</option>
+      ))}
+    </select>
+  );
+}
+
+export default function Tasks() {
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
+  const [filters, setFilters] = useState({ priority: '', devStatus: '', testStatus: '', overdue: '', search: '' });
+
+  const fetchTasks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (filters.priority) params.priority = filters.priority;
+      if (filters.devStatus) params.devStatus = filters.devStatus;
+      if (filters.testStatus) params.testStatus = filters.testStatus;
+      if (filters.overdue) params.overdue = filters.overdue;
+      if (filters.search) params.search = filters.search;
+      const res = await api.get('/tasks', { params });
+      setTasks(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+
+  useEffect(() => { fetchTasks(); }, [fetchTasks]);
+
+  const handleInlineUpdate = async (taskId, field, value) => {
+    try {
+      const res = await api.put(`/tasks/${taskId}`, { [field]: value });
+      setTasks(prev => prev.map(t => t.id === taskId ? res.data : t));
+    } catch (err) {
+      console.error('Inline update failed:', err);
+    }
+  };
+
+  const handleDelete = async id => {
+    try {
+      await api.delete(`/tasks/${id}`);
+      setTasks(prev => prev.filter(t => t.id !== id));
+      setDeleteId(null);
+    } catch (err) {
+      console.error('Delete failed:', err);
+    }
+  };
+
+  const handleModalSave = task => {
+    if (editingTask) {
+      setTasks(prev => prev.map(t => t.id === task.id ? task : t));
+    } else {
+      setTasks(prev => [task, ...prev]);
+    }
+    setModalOpen(false);
+    setEditingTask(null);
+  };
+
+  const getPrioritySelectStyle = (val) => ({
+    CRITICAL: 'bg-red-500/20 text-red-400 border-red-500/30',
+    HIGH: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+    MEDIUM: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    LOW: 'bg-green-500/20 text-green-400 border-green-500/30',
+  }[val] || '');
+
+  const getDevSelectStyle = (val) => ({
+    NOT_STARTED: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+    IN_PROGRESS: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    IN_REVIEW: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    COMPLETED: 'bg-green-500/20 text-green-400 border-green-500/30',
+    BLOCKED: 'bg-red-500/20 text-red-400 border-red-500/30',
+  }[val] || '');
+
+  const getTestSelectStyle = (val) => ({
+    NOT_STARTED: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+    IN_PROGRESS: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    PASSED: 'bg-green-500/20 text-green-400 border-green-500/30',
+    FAILED: 'bg-red-500/20 text-red-400 border-red-500/30',
+    BLOCKED: 'bg-red-500/20 text-red-400 border-red-500/30',
+  }[val] || '');
+
+  return (
+    <div className="p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Task Board</h1>
+          <p className="text-gray-400 mt-1">{tasks.length} task{tasks.length !== 1 ? 's' : ''}</p>
+        </div>
+        <button
+          id="create-task-btn"
+          onClick={() => { setEditingTask(null); setModalOpen(true); }}
+          className="btn-primary flex items-center gap-2"
+        >
+          <span className="text-lg leading-none">+</span>
+          New Task
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="card p-4 mb-4 flex flex-wrap gap-3">
+        <input
+          id="search-input"
+          type="text"
+          placeholder="🔍 Search tasks…"
+          className="input w-52"
+          value={filters.search}
+          onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
+        />
+        <select id="filter-priority" className="input w-36" value={filters.priority} onChange={e => setFilters(f => ({ ...f, priority: e.target.value }))}>
+          <option value="">All Priorities</option>
+          {PRIORITIES.map(p => <option key={p} value={p}>{PRI_LABELS[p]}</option>)}
+        </select>
+        <select id="filter-devstatus" className="input w-40" value={filters.devStatus} onChange={e => setFilters(f => ({ ...f, devStatus: e.target.value }))}>
+          <option value="">All Dev Status</option>
+          {DEV_STATUSES.map(s => <option key={s} value={s}>{DEV_LABELS[s]}</option>)}
+        </select>
+        <select id="filter-teststatus" className="input w-40" value={filters.testStatus} onChange={e => setFilters(f => ({ ...f, testStatus: e.target.value }))}>
+          <option value="">All Test Status</option>
+          {TEST_STATUSES.map(s => <option key={s} value={s}>{TEST_LABELS[s]}</option>)}
+        </select>
+        <select id="filter-overdue" className="input w-36" value={filters.overdue} onChange={e => setFilters(f => ({ ...f, overdue: e.target.value }))}>
+          <option value="">All Tasks</option>
+          <option value="true">Overdue Only</option>
+        </select>
+        {(filters.priority || filters.devStatus || filters.testStatus || filters.overdue || filters.search) && (
+          <button
+            onClick={() => setFilters({ priority: '', devStatus: '', testStatus: '', overdue: '', search: '' })}
+            className="btn-secondary text-sm"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Table */}
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-800/50 border-b border-gray-700">
+              <tr>
+                <th className="table-header">ID</th>
+                <th className="table-header">Task / Group</th>
+                <th className="table-header">Priority</th>
+                <th className="table-header">Dev Status</th>
+                <th className="table-header">Test Status</th>
+                <th className="table-header">Deadline</th>
+                <th className="table-header">Assigned To</th>
+                <th className="table-header">Overdue</th>
+                <th className="table-header">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-800/50">
+              {loading ? (
+                <tr>
+                  <td colSpan={9} className="text-center py-12 text-gray-500">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                      Loading tasks…
+                    </div>
+                  </td>
+                </tr>
+              ) : tasks.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="text-center py-16 text-gray-500">
+                    <div className="text-4xl mb-3">📭</div>
+                    <p className="font-medium">No tasks found</p>
+                    <p className="text-sm mt-1">Create your first task to get started</p>
+                  </td>
+                </tr>
+              ) : tasks.map(task => (
+                <tr key={task.id} className="task-row transition-colors">
+                  <td className="table-cell">
+                    <span className="font-mono text-xs text-gray-500">{task.id.slice(-6).toUpperCase()}</span>
+                  </td>
+                  <td className="table-cell">
+                    <Link 
+                      to={`/tasks/${task.id}`}
+                      className="max-w-xs text-left group focus:outline-none block w-full"
+                    >
+                      <p className="font-medium text-gray-100 group-hover:text-violet-400 transition-colors truncate">{task.title}</p>
+                      <p className="text-xs text-gray-500 mt-0.5 group-hover:text-gray-400 transition-colors">{task.group}</p>
+                    </Link>
+                  </td>
+                  <td className="table-cell">
+                    <InlineSelect
+                      value={task.priority}
+                      options={PRIORITIES}
+                      labels={PRI_LABELS}
+                      onChange={v => handleInlineUpdate(task.id, 'priority', v)}
+                      colorClass={getPrioritySelectStyle(task.priority)}
+                    />
+                  </td>
+                  <td className="table-cell">
+                    <InlineSelect
+                      value={task.devStatus}
+                      options={DEV_STATUSES}
+                      labels={DEV_LABELS}
+                      onChange={v => handleInlineUpdate(task.id, 'devStatus', v)}
+                      colorClass={getDevSelectStyle(task.devStatus)}
+                    />
+                  </td>
+                  <td className="table-cell">
+                    <InlineSelect
+                      value={task.testStatus}
+                      options={TEST_STATUSES}
+                      labels={TEST_LABELS}
+                      onChange={v => handleInlineUpdate(task.id, 'testStatus', v)}
+                      colorClass={getTestSelectStyle(task.testStatus)}
+                    />
+                  </td>
+                  <td className="table-cell">
+                    <span className={`text-sm ${new Date(task.deadline) < new Date() && !task.isClosed ? 'text-red-400' : 'text-gray-300'}`}>
+                      {format(new Date(task.deadline), 'MMM d, yyyy')}
+                    </span>
+                  </td>
+                  <td className="table-cell">
+                    {task.assignedUser ? (
+                      <div>
+                        <p className="text-sm text-gray-200">{task.assignedUser.name}</p>
+                        <p className="text-xs text-gray-500">{task.assignedUser.email}</p>
+                      </div>
+                    ) : (
+                      <span className="text-gray-600 text-sm">Unassigned</span>
+                    )}
+                  </td>
+                  <td className="table-cell">
+                    <OverdueBadge
+                      overdueFlag={task.overdueFlag}
+                      overdueTeam={task.overdueTeam}
+                      isClosed={task.isClosed}
+                    />
+                  </td>
+                  <td className="table-cell">
+                    <div className="flex items-center gap-1">
+                      <button
+                        id={`edit-btn-${task.id}`}
+                        onClick={() => { setEditingTask(task); setModalOpen(true); }}
+                        className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-violet-400"
+                        title="Edit task"
+                      >
+                        ✏️
+                      </button>
+                      {user?.role === 'ADMIN' && (
+                        <button
+                          id={`delete-btn-${task.id}`}
+                          onClick={() => setDeleteId(task.id)}
+                          className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-red-400"
+                          title="Delete task"
+                        >
+                          🗑️
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Task Modal */}
+      {modalOpen && (
+        <TaskModal
+          task={editingTask}
+          onClose={() => { setModalOpen(false); setEditingTask(null); }}
+          onSave={handleModalSave}
+        />
+      )}
+
+      {/* Delete Confirm Dialog */}
+      {deleteId && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="card p-6 w-full max-w-sm">
+            <h3 className="text-lg font-semibold text-white mb-2">Delete Task?</h3>
+            <p className="text-gray-400 text-sm mb-6">This action cannot be undone.</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteId(null)} className="btn-secondary">Cancel</button>
+              <button id="confirm-delete-btn" onClick={() => handleDelete(deleteId)} className="btn-danger">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
