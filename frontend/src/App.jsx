@@ -5,7 +5,8 @@ import { BrandProvider } from './contexts/BrandContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import Tasks from './pages/Tasks';
+import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
 import TaskDetail from './pages/TaskDetail';
 import Admin from './pages/Admin';
 import BrandSettings from './pages/BrandSettings';
@@ -36,8 +37,9 @@ function App() {
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route index element={<Navigate to="/tasks" replace />} />
-              <Route path="tasks" element={<Tasks />} />
+              <Route index element={<Navigate to="/projects" replace />} />
+              <Route path="projects" element={<Projects />} />
+              <Route path="projects/:id" element={<ProjectDetail />} />
               <Route path="tasks/:id" element={<TaskDetail />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="admin" element={<Admin />} />

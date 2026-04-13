@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import TaskModal from '../components/TaskModal';
 import { PriorityBadge, DevStatusBadge, TestStatusBadge, OverdueBadge } from '../components/Badge';
@@ -29,8 +29,12 @@ function InlineSelect({ value, options, labels, onChange, colorClass }) {
   );
 }
 
-export default function Tasks() {
+export default function ProjectDetail() {
+  const { id: projectId } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
+  
+  const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -41,7 +45,11 @@ export default function Tasks() {
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
-      const params = {};
+      // First fetch project
+      const projRes = await api.get(`/projects/${projectId}`);
+      setProject(projRes.data);
+
+      const params = { projectId };
       if (filters.priority) params.priority = filters.priority;
       if (filters.devStatus) params.devStatus = filters.devStatus;
       if (filters.testStatus) params.testStatus = filters.testStatus;
@@ -110,23 +118,51 @@ export default function Tasks() {
     BLOCKED: 'bg-red-500/20 text-red-400 border-red-500/30',
   }[val] || '');
 
+  if (!project && !loading) {
+    return <div className="p-8 text-red-400">Project not found</div>;
+  }
+
   return (
     <div className="p-4 md:p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-white">Task Board</h1>
-          <p className="text-gray-400 mt-1 text-sm">{tasks.length} task{tasks.length !== 1 ? 's' : ''}</p>
-        </div>
-        <button
-          id="create-task-btn"
-          onClick={() => { setEditingTask(null); setModalOpen(true); }}
-          className="btn-primary flex items-center gap-2 text-sm"
-        >
-          <span className="text-lg leading-none">+</span>
-          <span className="hidden sm:inline">New Task</span>
-          <span className="sm:hidden">New</span>
+      {/* Project Header */}
+      <div className="mb-6">
+        <button onClick={() => navigate('/projects')} className="text-sm text-gray-400 hover:text-white mb-4 inline-flex items-center gap-1">
+          ← Back to Projects
         </button>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl md:text-3xl font-bold text-white">{project?.name || 'Loading...'}</h1>
+              {project && (
+                <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded border ${
+                  project.status === 'COMPLETED' ? 'bg-green-500/10 text-green-400 border-green-500/30' :
+                  project.status === 'ON_HOLD' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' :
+                  'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                }`}>
+                  {project.status.replace('_', ' ')}
+                </span>
+              )}
+            </div>
+            {project?.description && <p className="text-gray-400 mt-2 max-w-2xl">{project.description}</p>}
+            {project?.deadline && (
+              <p className="text-sm mt-3 flex items-center gap-2">
+                <span className="text-gray-500">Go-live:</span>
+                <span className={new Date(project.deadline) < new Date() && project.status !== 'COMPLETED' ? 'text-red-400 font-medium' : 'text-gray-300'}>
+                  {format(new Date(project.deadline), 'MMM d, yyyy')}
+                </span>
+              </p>
+            )}
+          </div>
+          <button
+            id="create-task-btn"
+            onClick={() => { setEditingTask(null); setModalOpen(true); }}
+            className="btn-primary flex items-center gap-2 text-sm"
+          >
+            <span className="text-lg leading-none">+</span>
+            <span className="hidden sm:inline">Add Task</span>
+            <span className="sm:hidden">Add</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -307,6 +343,7 @@ export default function Tasks() {
       {modalOpen && (
         <TaskModal
           task={editingTask}
+          projectId={projectId}
           onClose={() => { setModalOpen(false); setEditingTask(null); }}
           onSave={handleModalSave}
         />

@@ -14,7 +14,7 @@ router.use(authMiddleware);
 
 const taskSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  group: z.string().min(1, 'Group is required'),
+  group: z.string().optional().default(''),
   description: z.string().optional().default(''),
   priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).default('MEDIUM'),
   devStatus: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'IN_REVIEW', 'COMPLETED', 'BLOCKED']).default('NOT_STARTED'),
@@ -22,7 +22,8 @@ const taskSchema = z.object({
   deadline: z.string().refine(d => !isNaN(Date.parse(d)), { message: 'Invalid date' }),
   notes: z.string().optional().default(''),
   assignedUserId: z.string().optional().nullable(),
-  assignedTeamId: z.string().min(1, 'Assigned Group is required'),
+  assignedTeamId: z.string().optional().nullable(),
+  projectId: z.string().min(1, 'Project is required'),
 });
 
 const updateTaskSchema = z.object({
@@ -36,6 +37,7 @@ const updateTaskSchema = z.object({
   notes: z.string().optional(),
   assignedUserId: z.string().optional().nullable(),
   assignedTeamId: z.string().optional().nullable(),
+  projectId: z.string().optional(),
 });
 
 // GET /api/tasks/summary
@@ -73,13 +75,14 @@ router.get('/summary', async (req, res) => {
 // GET /api/tasks — list with filters
 router.get('/', async (req, res) => {
   try {
-    const { priority, devStatus, testStatus, assignedUserId, overdue, search } = req.query;
+    const { priority, devStatus, testStatus, assignedUserId, overdue, search, projectId } = req.query;
     const where = {};
 
     if (priority) where.priority = priority;
     if (devStatus) where.devStatus = devStatus;
     if (testStatus) where.testStatus = testStatus;
     if (assignedUserId) where.assignedUserId = assignedUserId;
+    if (projectId) where.projectId = projectId;
     if (overdue === 'true') where.overdueFlag = true;
     if (search) where.title = { contains: search, mode: 'insensitive' };
 

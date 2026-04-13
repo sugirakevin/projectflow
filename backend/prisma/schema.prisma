@@ -20,6 +20,7 @@ model User {
   tasks     Task[]
   comments  Comment[]
   notifications Notification[]
+  projects  Project[]
   createdAt DateTime @default(now())
 }
 
@@ -37,6 +38,19 @@ model Team {
   users     User[]
   tasks     Task[]
   createdAt DateTime @default(now())
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  status      String   @default("ACTIVE")
+  deadline    DateTime?
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdById String
+  tasks       Task[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Task {
@@ -61,6 +75,8 @@ model Task {
   updatedAt      DateTime  @updatedAt
   comments       Comment[]
   notifications  Notification[]
+  project        Project?  @relation(fields: [projectId], references: [id])
+  projectId      String?
 }
 
 model Comment {

@@ -65,7 +65,7 @@ export default function Layout() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-6 space-y-1">
-        <NavItem to="/tasks" icon="📋" label="Task Board" onClick={closeSidebar} />
+        <NavItem to="/projects" icon="📁" label="Projects" onClick={closeSidebar} />
         <NavItem to="/dashboard" icon="📊" label="Dashboard" onClick={closeSidebar} />
         {user?.role === 'ADMIN' && (
           <NavItem to="/admin" icon="🎛️" label="Admin Panel" onClick={closeSidebar} />

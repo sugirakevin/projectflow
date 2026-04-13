@@ -18,7 +18,7 @@ const DEFAULT_FORM = {
   assignedUserId: '',
 };
 
-export default function TaskModal({ task, onClose, onSave }) {
+export default function TaskModal({ task, projectId, onClose, onSave }) {
   const [form, setForm] = useState(DEFAULT_FORM);
   const [users, setUsers] = useState([]);
   const [teams, setTeams] = useState([]);
@@ -68,7 +68,7 @@ export default function TaskModal({ task, onClose, onSave }) {
       if (isEditing) {
         res = await api.put(`/tasks/${task.id}`, payload);
       } else {
-        res = await api.post('/tasks', payload);
+        res = await api.post('/tasks', { ...payload, projectId });
       }
       onSave(res.data);
     } catch (err) {

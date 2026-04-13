@@ -18,6 +18,7 @@ const adminRoutes = require('./routes/admin');
 const notificationRoutes = require('./routes/notifications');
 const teamRoutes = require('./routes/teams');
 const settingsRoutes = require('./routes/settings');
+const projectRoutes = require('./routes/projects');
 const { authMiddleware, adminMiddleware } = require('./middleware/auth');
 
 const app = express();
@@ -57,6 +58,7 @@ app.use('/api/admin', authMiddleware, adminMiddleware, adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/projects', authMiddleware, projectRoutes);
 
 // 404 handler
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
