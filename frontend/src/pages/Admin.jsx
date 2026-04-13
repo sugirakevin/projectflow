@@ -109,79 +109,101 @@ export default function Admin() {
   if (error) return <div className="p-8 text-red-500 font-bold">{error}</div>;
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <div className="flex justify-between items-end mb-8 border-b border-gray-800 pb-4">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
+      <div className="flex flex-wrap justify-between items-start gap-4 mb-6 border-b border-gray-800 pb-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-4">Admin Panel</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">Admin Panel</h1>
           <div className="flex gap-4">
-            <button 
+            <button
               onClick={() => setActiveTab('USERS')}
               className={`pb-2 px-1 border-b-2 font-medium transition-colors ${activeTab === 'USERS' ? 'border-violet-500 text-violet-400' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
             >
-              System Users ({users.length})
+              Users ({users.length})
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('TEAMS')}
               className={`pb-2 px-1 border-b-2 font-medium transition-colors ${activeTab === 'TEAMS' ? 'border-violet-500 text-violet-400' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
             >
-              Group Directory ({teams.length})
+              Groups ({teams.length})
             </button>
           </div>
         </div>
-        
         {activeTab === 'USERS' ? (
-          <button onClick={() => { setEditingUser(null); setUserForm({ name: '', email: '', password: '', role: 'USER', canEditBranding: false }); setShowUserModal(true); }} className="btn-primary text-sm">
-            + New User
-          </button>
+          <button onClick={() => { setEditingUser(null); setUserForm({ name: '', email: '', password: '', role: 'USER', canEditBranding: false }); setShowUserModal(true); }} className="btn-primary text-sm">+ New User</button>
         ) : (
-          <button onClick={() => { setEditingTeam(null); setTeamForm({ name: '', userIds: [] }); setShowTeamModal(true); }} className="btn-primary text-sm">
-            + Create Group
-          </button>
+          <button onClick={() => { setEditingTeam(null); setTeamForm({ name: '', userIds: [] }); setShowTeamModal(true); }} className="btn-primary text-sm">+ Create Group</button>
         )}
       </div>
 
       {activeTab === 'USERS' && (
-        <div className="card overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-900 border-b border-gray-800">
-                <th className="p-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">User</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Role</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Brand Auth</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Joined</th>
-                <th className="p-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              {users.map(u => (
-                <tr key={u.id} className="hover:bg-gray-800/30 transition-colors">
-                  <td className="p-4">
-                    <div className="font-medium text-gray-200">{u.name} {u.id === user.id && <span className="ml-2 text-[10px] bg-violet-600/30 text-violet-400 px-1.5 py-0.5 rounded">YOU</span>}</div>
-                    <div className="text-sm text-gray-500">{u.email}</div>
-                  </td>
-                  <td className="p-4">
-                    <span className={`inline-block px-2.5 py-1 text-[10px] font-bold uppercase rounded border ${u.role === 'ADMIN' ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-blue-500/10 text-blue-400 border-blue-500/30'}`}>
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    {u.role === 'ADMIN' ? (
-                       <span className="text-xs text-gray-500 italic">Global</span>
-                    ) : u.canEditBranding ? (
-                       <span className="text-xs text-brand font-medium">Granted</span>
-                    ) : (
-                       <span className="text-xs text-gray-600">Locked</span>
-                    )}
-                  </td>
-                  <td className="p-4 text-sm text-gray-400">{format(new Date(u.createdAt), 'MMM d, yyyy')}</td>
-                  <td className="p-4 text-right space-x-3">
-                    <button onClick={() => { setEditingUser(u); setUserForm({ name: u.name, email: u.email, password: '', role: u.role, canEditBranding: u.canEditBranding || false }); setShowUserModal(true); }} className="text-sm font-medium text-brand">Edit</button>
-                    <button onClick={() => handleDeleteUser(u.id)} disabled={u.id === user.id} className="text-sm font-medium text-red-400 disabled:opacity-30">Delete</button>
-                  </td>
+        <div>
+          {/* Desktop table */}
+          <div className="card overflow-hidden hidden md:block">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-900 border-b border-gray-800">
+                  <th className="p-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">User</th>
+                  <th className="p-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Role</th>
+                  <th className="p-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Brand Auth</th>
+                  <th className="p-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Joined</th>
+                  <th className="p-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-800">
+                {users.map(u => (
+                  <tr key={u.id} className="hover:bg-gray-800/30 transition-colors">
+                    <td className="p-4">
+                      <div className="font-medium text-gray-200">{u.name} {u.id === user.id && <span className="ml-2 text-[10px] bg-violet-600/30 text-violet-400 px-1.5 py-0.5 rounded">YOU</span>}</div>
+                      <div className="text-sm text-gray-500">{u.email}</div>
+                    </td>
+                    <td className="p-4">
+                      <span className={`inline-block px-2.5 py-1 text-[10px] font-bold uppercase rounded border ${u.role === 'ADMIN' ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-blue-500/10 text-blue-400 border-blue-500/30'}`}>{u.role}</span>
+                    </td>
+                    <td className="p-4">
+                      {u.role === 'ADMIN' ? <span className="text-xs text-gray-500 italic">Global</span>
+                        : u.canEditBranding ? <span className="text-xs text-brand font-medium">Granted</span>
+                        : <span className="text-xs text-gray-600">Locked</span>}
+                    </td>
+                    <td className="p-4 text-sm text-gray-400">{format(new Date(u.createdAt), 'MMM d, yyyy')}</td>
+                    <td className="p-4 text-right space-x-3">
+                      <button onClick={() => { setEditingUser(u); setUserForm({ name: u.name, email: u.email, password: '', role: u.role, canEditBranding: u.canEditBranding || false }); setShowUserModal(true); }} className="text-sm font-medium text-brand">Edit</button>
+                      <button onClick={() => handleDeleteUser(u.id)} disabled={u.id === user.id} className="text-sm font-medium text-red-400 disabled:opacity-30">Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {users.map(u => (
+              <div key={u.id} className="card p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-medium text-gray-200 flex items-center gap-2 flex-wrap">
+                      {u.name}
+                      {u.id === user.id && <span className="text-[10px] bg-violet-600/30 text-violet-400 px-1.5 py-0.5 rounded">YOU</span>}
+                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${u.role === 'ADMIN' ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-blue-500/10 text-blue-400 border-blue-500/30'}`}>{u.role}</span>
+                    </div>
+                    <div className="text-sm text-gray-500 mt-0.5">{u.email}</div>
+                    <div className="text-xs text-gray-600 mt-1">Joined {format(new Date(u.createdAt), 'MMM d, yyyy')} · Brand: {u.role === 'ADMIN' ? 'Global' : u.canEditBranding ? 'Granted' : 'Locked'}</div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => { setEditingUser(u); setUserForm({ name: u.name, email: u.email, password: '', role: u.role, canEditBranding: u.canEditBranding || false }); setShowUserModal(true); }}
+                      className="px-3 py-1.5 text-xs font-medium text-violet-400 bg-violet-500/10 border border-violet-500/30 rounded-lg hover:bg-violet-500/20 transition-colors"
+                    >Edit</button>
+                    <button
+                      onClick={() => handleDeleteUser(u.id)}
+                      disabled={u.id === user.id}
+                      className="px-3 py-1.5 text-xs font-medium text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg hover:bg-red-500/20 transition-colors disabled:opacity-30"
+                    >Delete</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -189,9 +211,9 @@ export default function Admin() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {teams.map(t => (
             <div key={t.id} className="card p-5 relative group border border-gray-800 hover:border-gray-700 transition-colors">
-              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                <button onClick={() => { setEditingTeam(t); setTeamForm({ name: t.name, userIds: t.users.map(u => u.id) }); setShowTeamModal(true); }} className="text-xs text-violet-400">Manage</button>
-                <button onClick={() => handleDeleteTeam(t.id)} className="text-xs text-red-400">Delete</button>
+              <div className="flex items-center gap-2 justify-end mb-2">
+                <button onClick={() => { setEditingTeam(t); setTeamForm({ name: t.name, userIds: t.users.map(u => u.id) }); setShowTeamModal(true); }} className="text-xs text-violet-400 bg-violet-500/10 border border-violet-500/30 px-2.5 py-1 rounded-lg hover:bg-violet-500/20 transition-colors">Manage</button>
+                <button onClick={() => handleDeleteTeam(t.id)} className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 px-2.5 py-1 rounded-lg hover:bg-red-500/20 transition-colors">Delete</button>
               </div>
               <h3 className="text-lg font-bold text-white mb-1">{t.name}</h3>
               <p className="text-xs text-gray-500 mb-4">{t.users.length} member{t.users.length !== 1 ? 's' : ''}</p>
