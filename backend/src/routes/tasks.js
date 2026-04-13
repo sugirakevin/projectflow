@@ -143,7 +143,10 @@ router.post('/:id/comments', async (req, res) => {
 
     const task = await prisma.task.findUnique({ 
       where: { id },
-      include: { assignedUser: { select: { id: true, name: true, email: true } } }
+      include: { 
+        assignedUser: { select: { id: true, name: true, email: true } },
+        assignedTeam: { include: { users: { select: { id: true, name: true, email: true } } } }
+      }
     });
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
@@ -152,22 +155,34 @@ router.post('/:id/comments', async (req, res) => {
         text: text || '',
         imageUrl: imageUrl || null,
         taskId: id,
-        userId: req.user.id, // req.user set by authMiddleware
+        userId: req.user.id,
       },
       include: {
         user: { select: { id: true, name: true } },
       },
     });
 
+    // Collect all user IDs to notify (team members + assigned user, excluding commenter)
+    const notifyUserIds = new Set();
+    if (task.assignedTeam?.users) {
+      task.assignedTeam.users
+        .filter(u => u.id !== req.user.id)
+        .forEach(u => notifyUserIds.add(u.id));
+    }
     if (task.assignedUserId && task.assignedUserId !== req.user.id) {
-      await prisma.notification.create({
-        data: {
-          userId: task.assignedUserId,
+      notifyUserIds.add(task.assignedUserId);
+    }
+
+    if (notifyUserIds.size > 0) {
+      await prisma.notification.createMany({
+        data: Array.from(notifyUserIds).map(userId => ({
+          userId,
           title: `New Comment: ${task.title}`,
           message: `${req.user.name} commented: "${(text || '').substring(0, 50)}${(text || '').length > 50 ? '...' : ''}"`,
           taskId: task.id
-        }
+        }))
       });
+      // Email the assigned user or team
       sendCommentEmail(task, text || 'Attached an image', req.user).catch(console.error);
     }
 
@@ -271,21 +286,22 @@ router.put('/:id', async (req, res) => {
       },
     });
 
-    if (task.assignedTeamId && existing.assignedTeamId !== task.assignedTeamId) {
-      sendTeamAssignmentEmail(task, task.assignedTeam, req.user).catch(console.error);
-      
-      if (task.assignedTeam) {
-        const notifyUsers = task.assignedTeam.users.filter(u => u.id !== req.user.id);
-        if (notifyUsers.length > 0) {
-          await prisma.notification.createMany({
-            data: notifyUsers.map(u => ({
-              userId: u.id,
-              title: `Team Assigned: ${task.title}`,
-              message: `${req.user.name} assigned your team to an existing task.`,
-              taskId: task.id
-            }))
-          });
-        }
+    // Notify all team members on ANY update (not just when team changes)
+    if (task.assignedTeamId && task.assignedTeam) {
+      const notifyTeamUsers = task.assignedTeam.users.filter(u => u.id !== req.user.id);
+      if (notifyTeamUsers.length > 0) {
+        await prisma.notification.createMany({
+          data: notifyTeamUsers.map(u => ({
+            userId: u.id,
+            title: `Task Updated: ${task.title}`,
+            message: `${req.user.name} made changes to a group task.`,
+            taskId: task.id
+          }))
+        });
+      }
+      // Email if team changed
+      if (existing.assignedTeamId !== task.assignedTeamId) {
+        sendTeamAssignmentEmail(task, task.assignedTeam, req.user).catch(console.error);
       }
     }
 
