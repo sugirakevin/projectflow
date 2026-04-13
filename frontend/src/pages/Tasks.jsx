@@ -111,46 +111,47 @@ export default function Tasks() {
   }[val] || '');
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Task Board</h1>
-          <p className="text-gray-400 mt-1">{tasks.length} task{tasks.length !== 1 ? 's' : ''}</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Task Board</h1>
+          <p className="text-gray-400 mt-1 text-sm">{tasks.length} task{tasks.length !== 1 ? 's' : ''}</p>
         </div>
         <button
           id="create-task-btn"
           onClick={() => { setEditingTask(null); setModalOpen(true); }}
-          className="btn-primary flex items-center gap-2"
+          className="btn-primary flex items-center gap-2 text-sm"
         >
           <span className="text-lg leading-none">+</span>
-          New Task
+          <span className="hidden sm:inline">New Task</span>
+          <span className="sm:hidden">New</span>
         </button>
       </div>
 
       {/* Filters */}
-      <div className="card p-4 mb-4 flex flex-wrap gap-3">
+      <div className="card p-3 md:p-4 mb-4 flex flex-wrap gap-2 md:gap-3">
         <input
           id="search-input"
           type="text"
           placeholder="🔍 Search tasks…"
-          className="input w-52"
+          className="input flex-1 min-w-0 md:w-52"
           value={filters.search}
           onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
         />
-        <select id="filter-priority" className="input w-36" value={filters.priority} onChange={e => setFilters(f => ({ ...f, priority: e.target.value }))}>
+        <select id="filter-priority" className="input w-full sm:w-36" value={filters.priority} onChange={e => setFilters(f => ({ ...f, priority: e.target.value }))}>
           <option value="">All Priorities</option>
           {PRIORITIES.map(p => <option key={p} value={p}>{PRI_LABELS[p]}</option>)}
         </select>
-        <select id="filter-devstatus" className="input w-40" value={filters.devStatus} onChange={e => setFilters(f => ({ ...f, devStatus: e.target.value }))}>
+        <select id="filter-devstatus" className="input w-full sm:w-40" value={filters.devStatus} onChange={e => setFilters(f => ({ ...f, devStatus: e.target.value }))}>
           <option value="">All Dev Status</option>
           {DEV_STATUSES.map(s => <option key={s} value={s}>{DEV_LABELS[s]}</option>)}
         </select>
-        <select id="filter-teststatus" className="input w-40" value={filters.testStatus} onChange={e => setFilters(f => ({ ...f, testStatus: e.target.value }))}>
+        <select id="filter-teststatus" className="input w-full sm:w-40" value={filters.testStatus} onChange={e => setFilters(f => ({ ...f, testStatus: e.target.value }))}>
           <option value="">All Test Status</option>
           {TEST_STATUSES.map(s => <option key={s} value={s}>{TEST_LABELS[s]}</option>)}
         </select>
-        <select id="filter-overdue" className="input w-36" value={filters.overdue} onChange={e => setFilters(f => ({ ...f, overdue: e.target.value }))}>
+        <select id="filter-overdue" className="input w-full sm:w-36" value={filters.overdue} onChange={e => setFilters(f => ({ ...f, overdue: e.target.value }))}>
           <option value="">All Tasks</option>
           <option value="true">Overdue Only</option>
         </select>
@@ -164,8 +165,8 @@ export default function Tasks() {
         )}
       </div>
 
-      {/* Table */}
-      <div className="card overflow-hidden">
+      {/* Desktop Table */}
+      <div className="card overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-800/50 border-b border-gray-700">
@@ -205,40 +206,19 @@ export default function Tasks() {
                     <span className="font-mono text-xs text-gray-500">{task.id.slice(-6).toUpperCase()}</span>
                   </td>
                   <td className="table-cell">
-                    <Link 
-                      to={`/tasks/${task.id}`}
-                      className="max-w-xs text-left group focus:outline-none block w-full"
-                    >
+                    <Link to={`/tasks/${task.id}`} className="max-w-xs text-left group focus:outline-none block w-full">
                       <p className="font-medium text-gray-100 group-hover:text-violet-400 transition-colors truncate">{task.title}</p>
                       <p className="text-xs text-gray-500 mt-0.5 group-hover:text-gray-400 transition-colors">{task.group}</p>
                     </Link>
                   </td>
                   <td className="table-cell">
-                    <InlineSelect
-                      value={task.priority}
-                      options={PRIORITIES}
-                      labels={PRI_LABELS}
-                      onChange={v => handleInlineUpdate(task.id, 'priority', v)}
-                      colorClass={getPrioritySelectStyle(task.priority)}
-                    />
+                    <InlineSelect value={task.priority} options={PRIORITIES} labels={PRI_LABELS} onChange={v => handleInlineUpdate(task.id, 'priority', v)} colorClass={getPrioritySelectStyle(task.priority)} />
                   </td>
                   <td className="table-cell">
-                    <InlineSelect
-                      value={task.devStatus}
-                      options={DEV_STATUSES}
-                      labels={DEV_LABELS}
-                      onChange={v => handleInlineUpdate(task.id, 'devStatus', v)}
-                      colorClass={getDevSelectStyle(task.devStatus)}
-                    />
+                    <InlineSelect value={task.devStatus} options={DEV_STATUSES} labels={DEV_LABELS} onChange={v => handleInlineUpdate(task.id, 'devStatus', v)} colorClass={getDevSelectStyle(task.devStatus)} />
                   </td>
                   <td className="table-cell">
-                    <InlineSelect
-                      value={task.testStatus}
-                      options={TEST_STATUSES}
-                      labels={TEST_LABELS}
-                      onChange={v => handleInlineUpdate(task.id, 'testStatus', v)}
-                      colorClass={getTestSelectStyle(task.testStatus)}
-                    />
+                    <InlineSelect value={task.testStatus} options={TEST_STATUSES} labels={TEST_LABELS} onChange={v => handleInlineUpdate(task.id, 'testStatus', v)} colorClass={getTestSelectStyle(task.testStatus)} />
                   </td>
                   <td className="table-cell">
                     <span className={`text-sm ${new Date(task.deadline) < new Date() && !task.isClosed ? 'text-red-400' : 'text-gray-300'}`}>
@@ -256,31 +236,13 @@ export default function Tasks() {
                     )}
                   </td>
                   <td className="table-cell">
-                    <OverdueBadge
-                      overdueFlag={task.overdueFlag}
-                      overdueTeam={task.overdueTeam}
-                      isClosed={task.isClosed}
-                    />
+                    <OverdueBadge overdueFlag={task.overdueFlag} overdueTeam={task.overdueTeam} isClosed={task.isClosed} />
                   </td>
                   <td className="table-cell">
                     <div className="flex items-center gap-1">
-                      <button
-                        id={`edit-btn-${task.id}`}
-                        onClick={() => { setEditingTask(task); setModalOpen(true); }}
-                        className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-violet-400"
-                        title="Edit task"
-                      >
-                        ✏️
-                      </button>
+                      <button id={`edit-btn-${task.id}`} onClick={() => { setEditingTask(task); setModalOpen(true); }} className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-violet-400" title="Edit task">✏️</button>
                       {user?.role === 'ADMIN' && (
-                        <button
-                          id={`delete-btn-${task.id}`}
-                          onClick={() => setDeleteId(task.id)}
-                          className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-red-400"
-                          title="Delete task"
-                        >
-                          🗑️
-                        </button>
+                        <button id={`delete-btn-${task.id}`} onClick={() => setDeleteId(task.id)} className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-red-400" title="Delete task">🗑️</button>
                       )}
                     </div>
                   </td>
@@ -289,6 +251,56 @@ export default function Tasks() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile Card List */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          <div className="card p-8 text-center text-gray-500">
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+              Loading tasks…
+            </div>
+          </div>
+        ) : tasks.length === 0 ? (
+          <div className="card p-12 text-center text-gray-500">
+            <div className="text-4xl mb-3">📭</div>
+            <p className="font-medium">No tasks found</p>
+            <p className="text-sm mt-1">Create your first task to get started</p>
+          </div>
+        ) : tasks.map(task => (
+          <div key={task.id} className="card p-4">
+            {/* Card header */}
+            <div className="flex items-start justify-between gap-2 mb-3">
+              <Link to={`/tasks/${task.id}`} className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-100 hover:text-violet-400 transition-colors">{task.title}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{task.group} · <span className="font-mono">{task.id.slice(-6).toUpperCase()}</span></p>
+              </Link>
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => { setEditingTask(task); setModalOpen(true); }} className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-violet-400">✏️</button>
+                {user?.role === 'ADMIN' && (
+                  <button onClick={() => setDeleteId(task.id)} className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-red-400">🗑️</button>
+                )}
+              </div>
+            </div>
+            {/* Statuses row */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              <InlineSelect value={task.priority} options={PRIORITIES} labels={PRI_LABELS} onChange={v => handleInlineUpdate(task.id, 'priority', v)} colorClass={getPrioritySelectStyle(task.priority)} />
+              <InlineSelect value={task.devStatus} options={DEV_STATUSES} labels={DEV_LABELS} onChange={v => handleInlineUpdate(task.id, 'devStatus', v)} colorClass={getDevSelectStyle(task.devStatus)} />
+              <InlineSelect value={task.testStatus} options={TEST_STATUSES} labels={TEST_LABELS} onChange={v => handleInlineUpdate(task.id, 'testStatus', v)} colorClass={getTestSelectStyle(task.testStatus)} />
+            </div>
+            {/* Footer */}
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span className={new Date(task.deadline) < new Date() && !task.isClosed ? 'text-red-400 font-medium' : ''}>
+                📅 {format(new Date(task.deadline), 'MMM d, yyyy')}
+              </span>
+              <div className="flex items-center gap-2">
+                {task.assignedUser && <span className="text-gray-400">👤 {task.assignedUser.name}</span>}
+                <OverdueBadge overdueFlag={task.overdueFlag} overdueTeam={task.overdueTeam} isClosed={task.isClosed} />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Task Modal */}
