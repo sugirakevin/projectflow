@@ -48,6 +48,9 @@ export default function ProjectDetail() {
   const [projectForm, setProjectForm] = useState({ name: '', description: '', status: '', deadline: '' });
   const [savingProject, setSavingProject] = useState(false);
 
+  // Dashboard visibility toggle
+  const [showDashboard, setShowDashboard] = useState(false);
+
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
@@ -190,22 +193,35 @@ export default function ProjectDetail() {
               </p>
             )}
           </div>
-          <button
-            id="create-task-btn"
-            onClick={() => { setEditingTask(null); setModalOpen(true); }}
-            className="btn-primary flex items-center gap-2 text-sm"
-          >
-            <span className="text-lg leading-none">+</span>
-            <span className="hidden sm:inline">Add Task</span>
-            <span className="sm:hidden">Add</span>
-          </button>
+          <div className="flex flex-col items-end gap-3">
+            <button
+              id="create-task-btn"
+              onClick={() => { setEditingTask(null); setModalOpen(true); }}
+              className="btn-primary flex items-center gap-2 text-sm"
+            >
+              <span className="text-lg leading-none">+</span>
+              <span className="hidden sm:inline">Add Task</span>
+              <span className="sm:hidden">Add</span>
+            </button>
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-400 hover:text-gray-200 transition-colors">
+              <input
+                type="checkbox"
+                checked={showDashboard}
+                onChange={e => setShowDashboard(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-violet-500 focus:ring-violet-500/20"
+              />
+              Show Analytics
+            </label>
+          </div>
         </div>
       </div>
 
       {/* Project Dashboard (Task Analytics) */}
-      <div className="-mx-4 md:-mx-6 mb-6 mt-[-1.5rem] bg-gray-900/30 border-y border-gray-800/50">
-        <Dashboard projectId={projectId} />
-      </div>
+      {showDashboard && (
+        <div className="-mx-4 md:-mx-6 mb-6 mt-[-1.5rem] bg-gray-900/30 border-y border-gray-800/50">
+          <Dashboard projectId={projectId} />
+        </div>
+      )}
 
       {/* Filters */}
       <div className="card p-3 md:p-4 mb-4 flex flex-wrap gap-2 md:gap-3">
