@@ -43,19 +43,24 @@ const updateTaskSchema = z.object({
 // GET /api/tasks/summary
 router.get('/summary', async (req, res) => {
   try {
+    const { projectId } = req.query;
+    const baseWhere = projectId ? { projectId } : {};
+
     const [total, overdue, closed] = await Promise.all([
-      prisma.task.count(),
-      prisma.task.count({ where: { overdueFlag: true } }),
-      prisma.task.count({ where: { isClosed: true } }),
+      prisma.task.count({ where: baseWhere }),
+      prisma.task.count({ where: { ...baseWhere, overdueFlag: true } }),
+      prisma.task.count({ where: { ...baseWhere, isClosed: true } }),
     ]);
 
     const byPriority = await prisma.task.groupBy({
       by: ['priority'],
+      where: baseWhere,
       _count: { priority: true },
     });
 
     const byDevStatus = await prisma.task.groupBy({
       by: ['devStatus'],
+      where: baseWhere,
       _count: { devStatus: true },
     });
 

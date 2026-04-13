@@ -3,6 +3,28 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// Get projects summary
+router.get('/summary', async (req, res) => {
+  try {
+    const [total, active, completed, onHold] = await Promise.all([
+      prisma.project.count(),
+      prisma.project.count({ where: { status: 'ACTIVE' } }),
+      prisma.project.count({ where: { status: 'COMPLETED' } }),
+      prisma.project.count({ where: { status: 'ON_HOLD' } }),
+    ]);
+
+    res.json({
+      total,
+      active,
+      completed,
+      onHold,
+    });
+  } catch (err) {
+    console.error('Projects summary error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // List all projects
 router.get('/', async (req, res) => {
   try {

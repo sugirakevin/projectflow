@@ -53,16 +53,33 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-export default function Dashboard() {
-  const [summary, setSummary] = useState(null);
+export default function Dashboard({ projectId }) {
+  const [taskSummary, setTaskSummary] = useState(null);
+  const [projectSummary, setProjectSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/tasks/summary')
-      .then(res => setSummary(res.data))
+    setLoading(true);
+    if (projectId) {
+      // Project-level dashboard (Tasks only)
+      api.get(`/tasks/summary?projectId=${projectId}`)
+        .then(res => setTaskSummary(res.data))
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    } else {
+      // Global dashboard (Projects + Global Tasks)
+      Promise.all([
+        api.get('/tasks/summary'),
+        api.get('/projects/summary')
+      ])
+      .then(([tasksRes, projectsRes]) => {
+        setTaskSummary(tasksRes.data);
+        setProjectSummary(projectsRes.data);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+    }
+  }, [projectId]);
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -70,31 +87,47 @@ export default function Dashboard() {
     </div>
   );
 
-  const priorityData = summary?.byPriority?.map(p => ({
+  const priorityData = taskSummary?.byPriority?.map(p => ({
     name: p.priority,
     value: p.count,
     fill: PRIORITY_COLORS[p.priority] || '#6b7280',
   })) || [];
 
-  const statusData = summary?.byDevStatus?.map(s => ({
+  const statusData = taskSummary?.byDevStatus?.map(s => ({
     name: STATUS_LABELS[s.status] || s.status,
     value: s.count,
     fill: STATUS_COLORS[s.status] || '#6b7280',
   })) || [];
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-gray-400 mt-1">Overview of your project health</p>
-      </div>
+    <div className={projectId ? "mt-8" : "p-8"}>
+      {!projectId && (
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-white">Global Dashboard</h1>
+          <p className="text-gray-400 mt-1">Overview of all projects and tasks</p>
+        </div>
+      )}
+
+      {/* Global Project Stats */}
+      {!projectId && projectSummary && (
+        <>
+          <h2 className="text-lg font-semibold text-white mb-4">Projects Overview</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <StatCard label="Total Projects" value={projectSummary.total} icon="📁" color="bg-blue-500/20" />
+            <StatCard label="Active" value={projectSummary.active} icon="🔥" color="bg-violet-500/20" />
+            <StatCard label="Completed" value={projectSummary.completed} icon="✅" color="bg-green-500/20" />
+            <StatCard label="On Hold" value={projectSummary.onHold} icon="⏸️" color="bg-yellow-500/20" />
+          </div>
+        </>
+      )}
 
       {/* Stats Cards */}
+      {!projectId && <h2 className="text-lg font-semibold text-white mb-4">Tasks Overview</h2>}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total Tasks" value={summary?.total ?? 0} icon="📋" color="bg-violet-500/20" />
-        <StatCard label="Overdue Tasks" value={summary?.overdue ?? 0} icon="⚠️" color="bg-red-500/20" />
-        <StatCard label="Closed Tasks" value={summary?.closed ?? 0} icon="✅" color="bg-green-500/20" />
-        <StatCard label="In Progress" value={summary?.byDevStatus?.find(s => s.status === 'IN_PROGRESS')?.count ?? 0} icon="⚡" color="bg-yellow-500/20" />
+        <StatCard label="Total Tasks" value={taskSummary?.total ?? 0} icon="📋" color="bg-violet-500/20" />
+        <StatCard label="Overdue Tasks" value={taskSummary?.overdue ?? 0} icon="⚠️" color="bg-red-500/20" />
+        <StatCard label="Closed Tasks" value={taskSummary?.closed ?? 0} icon="✅" color="bg-green-500/20" />
+        <StatCard label="In Progress" value={taskSummary?.byDevStatus?.find(s => s.status === 'IN_PROGRESS')?.count ?? 0} icon="⚡" color="bg-yellow-500/20" />
       </div>
 
       {/* Charts */}

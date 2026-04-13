@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import TaskModal from '../components/TaskModal';
 import { PriorityBadge, DevStatusBadge, TestStatusBadge, OverdueBadge } from '../components/Badge';
+import Dashboard from './Dashboard';
 import { format } from 'date-fns';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -41,6 +42,11 @@ export default function ProjectDetail() {
   const [editingTask, setEditingTask] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [filters, setFilters] = useState({ priority: '', devStatus: '', testStatus: '', overdue: '', search: '' });
+
+  // Project Edit state
+  const [editProjectModal, setEditProjectModal] = useState(false);
+  const [projectForm, setProjectForm] = useState({ name: '', description: '', status: '', deadline: '' });
+  const [savingProject, setSavingProject] = useState(false);
 
   const fetchTasks = useCallback(async () => {
     setLoading(true);
@@ -95,6 +101,20 @@ export default function ProjectDetail() {
     setEditingTask(null);
   };
 
+  const handleEditProject = async (e) => {
+    e.preventDefault();
+    setSavingProject(true);
+    try {
+      const res = await api.put(`/projects/${projectId}`, projectForm);
+      setProject(res.data);
+      setEditProjectModal(false);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update project');
+    } finally {
+      setSavingProject(false);
+    }
+  };
+
   const getPrioritySelectStyle = (val) => ({
     CRITICAL: 'bg-red-500/20 text-red-400 border-red-500/30',
     HIGH: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
@@ -142,6 +162,23 @@ export default function ProjectDetail() {
                   {project.status.replace('_', ' ')}
                 </span>
               )}
+              {user?.role === 'ADMIN' && project && (
+                <button 
+                  onClick={() => {
+                    setProjectForm({
+                      name: project.name,
+                      description: project.description || '',
+                      status: project.status,
+                      deadline: project.deadline ? project.deadline.slice(0, 10) : ''
+                    });
+                    setEditProjectModal(true);
+                  }}
+                  className="p-1.5 hover:bg-gray-800 rounded-lg transition-colors text-gray-500 hover:text-violet-400"
+                  title="Edit Project"
+                >
+                  ✏️
+                </button>
+              )}
             </div>
             {project?.description && <p className="text-gray-400 mt-2 max-w-2xl">{project.description}</p>}
             {project?.deadline && (
@@ -163,6 +200,11 @@ export default function ProjectDetail() {
             <span className="sm:hidden">Add</span>
           </button>
         </div>
+      </div>
+
+      {/* Project Dashboard (Task Analytics) */}
+      <div className="-mx-4 md:-mx-6 mb-6 mt-[-1.5rem] bg-gray-900/30 border-y border-gray-800/50">
+        <Dashboard projectId={projectId} />
       </div>
 
       {/* Filters */}
@@ -359,6 +401,46 @@ export default function ProjectDetail() {
               <button onClick={() => setDeleteId(null)} className="btn-secondary">Cancel</button>
               <button id="confirm-delete-btn" onClick={() => handleDelete(deleteId)} className="btn-danger">Delete</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Project Modal */}
+      {editProjectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl max-w-md w-full shadow-2xl">
+            <div className="p-5 border-b border-gray-800 flex justify-between items-center bg-gray-800/50 rounded-t-xl">
+              <h2 className="font-bold text-lg text-white">Edit Project</h2>
+              <button onClick={() => setEditProjectModal(false)} className="text-gray-500 hover:text-white transition-colors">✕</button>
+            </div>
+            <form onSubmit={handleEditProject} className="p-5 space-y-4">
+              <div>
+                <label className="label">Project Name *</label>
+                <input required type="text" value={projectForm.name} onChange={e => setProjectForm(p => ({...p, name: e.target.value}))} className="input" placeholder="e.g. Website Overhaul" />
+              </div>
+              <div>
+                <label className="label">Description</label>
+                <textarea rows="3" value={projectForm.description} onChange={e => setProjectForm(p => ({...p, description: e.target.value}))} className="input custom-scrollbar resize-none" placeholder="Brief project overview..."></textarea>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Status</label>
+                  <select value={projectForm.status} onChange={e => setProjectForm(p => ({...p, status: e.target.value}))} className="input">
+                    <option value="ACTIVE">Active</option>
+                    <option value="ON_HOLD">On Hold</option>
+                    <option value="COMPLETED">Completed</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Go-live Date</label>
+                  <input type="date" value={projectForm.deadline} onChange={e => setProjectForm(p => ({...p, deadline: e.target.value}))} className="input" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-3">
+                <button type="button" onClick={() => setEditProjectModal(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" disabled={savingProject} className="btn-primary">{savingProject ? 'Saving...' : 'Save Changes'}</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
