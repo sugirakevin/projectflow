@@ -31,7 +31,7 @@ export default function Register() {
             <span className="text-white font-bold text-xl">PF</span>
           </div>
           <h1 className="text-3xl font-bold text-white">Get started</h1>
-          <p className="text-gray-400 mt-2">Create your ProjectFlow account</p>
+          <p className="text-gray-400 mt-2">Create your TBprojects account</p>
         </div>
 
         <div className="card p-8">

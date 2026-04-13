@@ -57,7 +57,7 @@ export default function Layout() {
             ) : (
               <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 border border-transparent" style={{ backgroundColor: 'var(--brand-text-color)', color: 'var(--brand-color)' }}>PF</div>
             )}
-            {!brand?.logoUrl && <span className="font-bold text-lg tracking-tight truncate">ProjectFlow</span>}
+            {!brand?.logoUrl && <span className="font-bold text-lg tracking-tight truncate">TBprojects</span>}
           </div>
         </div>
 

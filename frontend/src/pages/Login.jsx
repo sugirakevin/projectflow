@@ -32,7 +32,7 @@ export default function Login() {
             <span className="text-white font-bold text-xl">PF</span>
           </div>
           <h1 className="text-3xl font-bold text-white">Welcome back</h1>
-          <p className="text-gray-400 mt-2">Sign in to ProjectFlow</p>
+          <p className="text-gray-400 mt-2">Sign in to TBprojects</p>
         </div>
 
         <div className="card p-8">

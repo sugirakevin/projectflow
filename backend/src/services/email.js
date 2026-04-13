@@ -1,7 +1,7 @@
 const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = 'ProjectFlow <onboarding@resend.dev>';
+const FROM = 'TBprojects <onboarding@resend.dev>';
 const APP_URL = process.env.CORS_ORIGIN || 'https://projectflow-mu.vercel.app';
 
 async function sendEmail({ to, subject, html }) {
