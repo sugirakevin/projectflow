@@ -69,7 +69,7 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 ProjectFlow API running on http://localhost:${PORT}`);
+  console.log(`🚀 ProjectFlow API running on port ${PORT}`);
   initCron();
 });
 
