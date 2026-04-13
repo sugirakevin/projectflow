@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api/axios';
 
-export default function Notifications() {
+export default function Notifications({ placement = 'top' }) {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
@@ -77,7 +77,7 @@ export default function Notifications() {
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 mb-2 w-80 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl shadow-black overflow-hidden z-[60]">
+        <div className={`absolute ${placement === 'bottom' ? 'bottom-full mb-2 left-0' : 'top-full mt-2 right-0'} w-80 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl shadow-black overflow-hidden z-[60]`}>
           <div className="px-4 py-3 border-b border-gray-700 flex justify-between items-center bg-gray-900/80">
             <h3 className="font-semibold text-white">Notifications</h3>
             <div className="flex items-center gap-3">

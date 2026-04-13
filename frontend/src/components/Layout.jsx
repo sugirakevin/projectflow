@@ -87,7 +87,7 @@ export default function Layout() {
             <p className="text-xs opacity-70 truncate">{user?.email}</p>
           </div>
           <span style={{ backgroundColor: 'color-mix(in srgb, var(--brand-text-color) 10%, transparent)' }} className="rounded-full inline-flex text-inherit">
-            <Notifications />
+            <Notifications placement="bottom" />
           </span>
         </div>
         <button
