@@ -31,6 +31,9 @@ export function AuthProvider({ children }) {
 
   const register = async (name, email, password) => {
     const res = await api.post('/auth/register', { name, email, password });
+    if (res.data.pendingApproval) {
+      return res.data; // Return the pending payload so Register.jsx can render it
+    }
     const { token, user: userData } = res.data;
     localStorage.setItem('pf_token', token);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;

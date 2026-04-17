@@ -11,11 +11,13 @@ export default function Admin() {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [settings, setSettings] = useState(null);
+  const [submittingSettings, setSubmittingSettings] = useState(false);
 
   // Modals
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'USER', canEditBranding: false });
+  const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'USER', canEditBranding: false, isApproved: true });
   const [submittingUser, setSubmittingUser] = useState(false);
 
   const [showTeamModal, setShowTeamModal] = useState(false);
@@ -25,12 +27,14 @@ export default function Admin() {
 
   const fetchData = async () => {
     try {
-      const [uRes, tRes] = await Promise.all([
+      const [uRes, tRes, sRes] = await Promise.all([
         axios.get('/admin/users'),
-        axios.get('/teams')
+        axios.get('/teams'),
+        axios.get('/settings')
       ]);
       setUsers(uRes.data);
       setTeams(tRes.data);
+      setSettings(sRes.data);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to fetch admin data');
@@ -56,6 +60,25 @@ export default function Admin() {
       await axios.delete(`/admin/users/${id}`);
       fetchData();
     } catch (err) { alert(err.response?.data?.error || 'Failed to delete user'); }
+  };
+
+  const handleApproveUser = async (id) => {
+    try {
+      await axios.put(`/admin/users/${id}`, { isApproved: true });
+      fetchData();
+    } catch (err) { alert(err.response?.data?.error || 'Failed to approve user'); }
+  };
+
+  const handleToggleRegistration = async () => {
+    setSubmittingSettings(true);
+    try {
+      const res = await axios.put('/settings/security', { publicRegistration: !settings.publicRegistration });
+      setSettings(res.data);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update security settings');
+    } finally {
+      setSubmittingSettings(false);
+    }
   };
 
   const handleUserSubmit = async (e) => {
@@ -126,11 +149,18 @@ export default function Admin() {
             >
               Groups ({teams.length})
             </button>
+            <button
+              onClick={() => setActiveTab('SECURITY')}
+              className={`pb-2 px-1 border-b-2 font-medium transition-colors ${activeTab === 'SECURITY' ? 'border-violet-500 text-violet-400' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
+            >
+              Security
+            </button>
           </div>
         </div>
-        {activeTab === 'USERS' ? (
-          <button onClick={() => { setEditingUser(null); setUserForm({ name: '', email: '', password: '', role: 'USER', canEditBranding: false }); setShowUserModal(true); }} className="btn-primary text-sm">+ New User</button>
-        ) : (
+        {activeTab === 'USERS' && (
+          <button onClick={() => { setEditingUser(null); setUserForm({ name: '', email: '', password: '', role: 'USER', canEditBranding: false, isApproved: true }); setShowUserModal(true); }} className="btn-primary text-sm">+ New User</button>
+        )}
+        {activeTab === 'TEAMS' && (
           <button onClick={() => { setEditingTeam(null); setTeamForm({ name: '', userIds: [] }); setShowTeamModal(true); }} className="btn-primary text-sm">+ Create Group</button>
         )}
       </div>
@@ -153,7 +183,11 @@ export default function Admin() {
                 {users.map(u => (
                   <tr key={u.id} className="hover:bg-gray-800/30 transition-colors">
                     <td className="p-4">
-                      <div className="font-medium text-gray-200">{u.name} {u.id === user.id && <span className="ml-2 text-[10px] bg-violet-600/30 text-violet-400 px-1.5 py-0.5 rounded">YOU</span>}</div>
+                      <div className="font-medium text-gray-200 flex items-center gap-2">
+                        {u.name} 
+                        {u.id === user.id && <span className="text-[10px] bg-violet-600/30 text-violet-400 px-1.5 py-0.5 rounded">YOU</span>}
+                        {!u.isApproved && <span className="text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded font-bold">PENDING</span>}
+                      </div>
                       <div className="text-sm text-gray-500">{u.email}</div>
                     </td>
                     <td className="p-4">
@@ -166,7 +200,10 @@ export default function Admin() {
                     </td>
                     <td className="p-4 text-sm text-gray-400">{format(new Date(u.createdAt), 'MMM d, yyyy')}</td>
                     <td className="p-4 text-right space-x-3">
-                      <button onClick={() => { setEditingUser(u); setUserForm({ name: u.name, email: u.email, password: '', role: u.role, canEditBranding: u.canEditBranding || false }); setShowUserModal(true); }} className="text-sm font-medium text-brand">Edit</button>
+                      {!u.isApproved && (
+                        <button onClick={() => handleApproveUser(u.id)} className="text-sm font-bold text-green-400 hover:text-green-300">Approve</button>
+                      )}
+                      <button onClick={() => { setEditingUser(u); setUserForm({ name: u.name, email: u.email, password: '', role: u.role, canEditBranding: u.canEditBranding || false, isApproved: u.isApproved }); setShowUserModal(true); }} className="text-sm font-medium text-brand">Edit</button>
                       <button onClick={() => handleDeleteUser(u.id)} disabled={u.id === user.id} className="text-sm font-medium text-red-400 disabled:opacity-30">Delete</button>
                     </td>
                   </tr>
@@ -184,14 +221,21 @@ export default function Admin() {
                     <div className="font-medium text-gray-200 flex items-center gap-2 flex-wrap">
                       {u.name}
                       {u.id === user.id && <span className="text-[10px] bg-violet-600/30 text-violet-400 px-1.5 py-0.5 rounded">YOU</span>}
+                      {!u.isApproved && <span className="text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded font-bold">PENDING</span>}
                       <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${u.role === 'ADMIN' ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-blue-500/10 text-blue-400 border-blue-500/30'}`}>{u.role}</span>
                     </div>
                     <div className="text-sm text-gray-500 mt-0.5">{u.email}</div>
                     <div className="text-xs text-gray-600 mt-1">Joined {format(new Date(u.createdAt), 'MMM d, yyyy')} · Brand: {u.role === 'ADMIN' ? 'Global' : u.canEditBranding ? 'Granted' : 'Locked'}</div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    {!u.isApproved && (
+                      <button
+                        onClick={() => handleApproveUser(u.id)}
+                        className="px-3 py-1.5 text-xs font-bold text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg hover:bg-green-500/20 transition-colors"
+                      >Approve</button>
+                    )}
                     <button
-                      onClick={() => { setEditingUser(u); setUserForm({ name: u.name, email: u.email, password: '', role: u.role, canEditBranding: u.canEditBranding || false }); setShowUserModal(true); }}
+                      onClick={() => { setEditingUser(u); setUserForm({ name: u.name, email: u.email, password: '', role: u.role, canEditBranding: u.canEditBranding || false, isApproved: u.isApproved }); setShowUserModal(true); }}
                       className="px-3 py-1.5 text-xs font-medium text-violet-400 bg-violet-500/10 border border-violet-500/30 rounded-lg hover:bg-violet-500/20 transition-colors"
                     >Edit</button>
                     <button
@@ -236,6 +280,36 @@ export default function Admin() {
         </div>
       )}
 
+      {activeTab === 'SECURITY' && (
+        <div className="card p-6 md:p-8 max-w-2xl">
+          <h2 className="text-xl font-bold text-white mb-6">Security Settings</h2>
+          
+          <div className="p-4 border border-gray-800 rounded-xl bg-gray-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-gray-200 font-semibold mb-1">Public Registration</h3>
+              <p className="text-xs text-gray-400 max-w-sm">
+                When enabled, anyone can register for an account from the login screen. 
+                <span className="text-violet-400 block mt-1 font-medium">New accounts require admin approval before they can log in.</span>
+              </p>
+            </div>
+            
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={settings?.publicRegistration || false}
+                disabled={submittingSettings}
+                onChange={handleToggleRegistration}
+              />
+              <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-500"></div>
+              <span className="ml-3 text-sm font-medium text-gray-300">
+                {settings?.publicRegistration ? 'Enabled' : 'Disabled'}
+              </span>
+            </label>
+          </div>
+        </div>
+      )}
+
       {/* User Modal */}
       {showUserModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -266,6 +340,18 @@ export default function Admin() {
                   </div>
                 </label>
               )}
+              <label className="flex items-start gap-3 p-3 bg-gray-950 border border-gray-800 rounded-lg cursor-pointer hover:bg-gray-900 transition-colors">
+                <input 
+                  type="checkbox" 
+                  checked={userForm.isApproved}
+                  onChange={e => setUserForm(p => ({...p, isApproved: e.target.checked}))}
+                  className="mt-1 rounded border-gray-700 bg-gray-900 text-green-500 focus:ring-green-500/20 w-4 h-4 cursor-pointer"
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-200">Account Approved</p>
+                  <p className="text-xs text-gray-500">Allow user to log in and use the platform.</p>
+                </div>
+              </label>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setShowUserModal(false)} className="btn-secondary">Cancel</button>
                 <button type="submit" disabled={submittingUser} className="btn-primary">{submittingUser ? 'Saving...' : 'Save'}</button>

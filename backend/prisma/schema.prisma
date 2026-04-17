@@ -15,6 +15,7 @@ model User {
   email     String   @unique
   password  String
   role      String     @default("USER")
+  isApproved Boolean @default(true)
   canEditBranding Boolean @default(false)
   teams     Team[]
   tasks     Task[]
@@ -29,6 +30,7 @@ model SystemSetting {
   themeColor String   @default("#7c3aed")
   bgUrl      String?
   logoUrl    String?
+  publicRegistration Boolean @default(false)
   updatedAt  DateTime @updatedAt
 }
 

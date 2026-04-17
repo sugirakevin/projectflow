@@ -37,4 +37,23 @@ router.put('/', authMiddleware, brandingMiddleware, async (req, res) => {
   }
 });
 
+// PUT /api/settings/security - Protected by admin role
+router.put('/security', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  try {
+    const { publicRegistration } = req.body;
+    const settings = await prisma.systemSetting.upsert({
+      where: { id: 'default' },
+      update: { publicRegistration },
+      create: { id: 'default', publicRegistration }
+    });
+    res.json(settings);
+  } catch (err) {
+    console.error('Update security settings error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

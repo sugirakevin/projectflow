@@ -11,7 +11,8 @@ const createUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   role: z.enum(['USER', 'ADMIN']).default('USER'),
-  canEditBranding: z.boolean().optional().default(false)
+  canEditBranding: z.boolean().optional().default(false),
+  isApproved: z.boolean().optional().default(true)
 });
 
 const updateUserSchema = z.object({
@@ -19,7 +20,8 @@ const updateUserSchema = z.object({
   email: z.string().email().optional(),
   password: z.string().min(6).optional(),
   role: z.enum(['USER', 'ADMIN']).optional(),
-  canEditBranding: z.boolean().optional()
+  canEditBranding: z.boolean().optional(),
+  isApproved: z.boolean().optional()
 });
 
 // GET /api/admin/users
@@ -32,6 +34,7 @@ router.get('/users', async (req, res) => {
         email: true,
         role: true,
         canEditBranding: true,
+        isApproved: true,
         createdAt: true,
         _count: {
           select: { tasks: true, comments: true }
@@ -58,8 +61,8 @@ router.post('/users', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 12);
     const user = await prisma.user.create({
-      data: { name, email, password: hashedPassword, role, canEditBranding },
-      select: { id: true, name: true, email: true, role: true, canEditBranding: true, createdAt: true, _count: { select: { tasks: true, comments: true } } }
+      data: { name, email, password: hashedPassword, role, canEditBranding, isApproved: req.body.isApproved ?? true },
+      select: { id: true, name: true, email: true, role: true, canEditBranding: true, isApproved: true, createdAt: true, _count: { select: { tasks: true, comments: true } } }
     });
 
     res.status(201).json(user);
@@ -93,7 +96,7 @@ router.put('/users/:id', async (req, res) => {
     const user = await prisma.user.update({
       where: { id },
       data: updateData,
-      select: { id: true, name: true, email: true, role: true, canEditBranding: true, createdAt: true, _count: { select: { tasks: true, comments: true } } }
+      select: { id: true, name: true, email: true, role: true, canEditBranding: true, isApproved: true, createdAt: true, _count: { select: { tasks: true, comments: true } } }
     });
 
     res.json(user);
